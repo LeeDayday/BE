@@ -22,7 +22,6 @@ from django.utils import timezone
 from utils.permission import *
 from rest_framework.permissions import IsAuthenticated
 
-
 # submission-class 관련
 class SubmissionClassView(APIView, EvaluationMixin):
     permission_classes = [IsClassUser]
@@ -162,6 +161,10 @@ class SubmissionClassCheckView(APIView):
             class_submission.on_leaderboard = True
             class_submission.save()
 
+        # contest 마감 이후 leaderboard 제출 시도 시 msg_time_error
+        if contest.end_time < timezone.now():
+            return Response(msg_time_error, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(msg_success, status=status.HTTP_200_OK)
 
 
@@ -290,6 +293,10 @@ class SubmissionCompetitionCheckView(APIView):
         for competition_submission in competition_submission_list:
             competition_submission.on_leaderboard = True
             competition_submission.save()
+
+        # competition 마감 이후 leaderboard 제출 시도 시 msg_time_error
+        if competition.end_time < timezone.now():
+            return Response(msg_time_error, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(msg_success, status=status.HTTP_200_OK)
 
