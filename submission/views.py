@@ -22,6 +22,7 @@ from django.utils import timezone
 from utils.permission import *
 from rest_framework.permissions import IsAuthenticated
 
+
 # submission-class 관련
 class SubmissionClassView(APIView, EvaluationMixin):
     permission_classes = [IsClassUser]
@@ -44,13 +45,13 @@ class SubmissionClassView(APIView, EvaluationMixin):
         if contest.is_exam and is_class_student:
             # ip 중복 체크
             exam = Exam.objects.get(user=request.user, contest=contest)
-            if exam.is_duplicated: # 중복이면 에러
+            if exam.is_duplicated:  # 중복이면 에러
                 return Response(msg_SubmissionClassView_post_e_3, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data.copy()
 
-        csv_str = data['csv'].name.split('.')[-1]
-        ipynb_str = data['ipynb'].name.split('.')[-1]
+        csv_str = data.get('csv', '').name.split('.')[-1]
+        ipynb_str = data.get('ipynb', '').name.split('.')[-1]
         if csv_str != 'csv':
             return Response(msg_SubmissionClassView_post_e_1, status=status.HTTP_400_BAD_REQUEST)
         if ipynb_str != 'ipynb':
@@ -161,7 +162,7 @@ class SubmissionClassCheckView(APIView):
             class_submission.on_leaderboard = True
             class_submission.save()
 
-        # contest 마감 이후 leaderboard 제출 시도 시 msg_time_error
+        # contest 마감 이후 leaderboard 제출 시도 시 msg_time_error 반환
         if contest.end_time < timezone.now():
             return Response(msg_time_error, status=status.HTTP_400_BAD_REQUEST)
 
@@ -188,8 +189,12 @@ class SubmissionCompetitionView(APIView, EvaluationMixin):
 
         data = request.data.copy()
 
-        csv_str = data['csv'].name.split('.')[-1]
-        ipynb_str = data['ipynb'].name.split('.')[-1]
+        csv_str = data.get('csv', '')
+        if csv_str != '':
+            csv_str = csv_str.name.split('.')[-1]
+        ipynb_str = data.get('ipynb', '')
+        if ipynb_str != '':
+            ipynb_str = ipynb_str.name.split('.')[-1]
         if csv_str != 'csv':
             return Response(msg_SubmissionClassView_post_e_1, status=status.HTTP_400_BAD_REQUEST)
         if ipynb_str != 'ipynb':
@@ -236,7 +241,8 @@ class SubmissionCompetitionListView(APIView, PaginationHandlerMixin):
         competition = get_competition(competition_id)
         username = request.GET.get('username', '')
 
-        submission_comptition_list = SubmissionCompetition.objects.filter(competition_id=competition_id).order_by('-created_time')
+        submission_comptition_list = SubmissionCompetition.objects.filter(competition_id=competition_id).order_by(
+            '-created_time')
         if username:
             submission_comptition_list = submission_comptition_list.filter(username=username)
 
@@ -294,7 +300,7 @@ class SubmissionCompetitionCheckView(APIView):
             competition_submission.on_leaderboard = True
             competition_submission.save()
 
-        # competition 마감 이후 leaderboard 제출 시도 시 msg_time_error
+        # competition 마감 이후 leaderboard 제출 시도 시 msg_time_error 반환
         if competition.end_time < timezone.now():
             return Response(msg_time_error, status=status.HTTP_400_BAD_REQUEST)
 
